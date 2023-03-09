@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Code Editor</title>
+    <script src="codemirror-5.65.12/lib/codemirror.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web-socket-js/1.0.0/web_socket.min.js" integrity="sha512-jtr9/t8rtBf1Sv832XjG1kAtUECQCqFnTAJWccL8CSC82VGzkPPih8rjtOfiiRKgqLXpLA1H/uQ/nq2bkHGWTQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="codemirror-5.65.12/lib/codemirror.css">
+    <script src="codemirror-5.65.12/mode/xml/xml.js"></script>
+    <script src="codemirror-5.65.12/addon/edit/closetag.js"></script>
+    <script src="KIWIGREditor.js"></script>
+    <link rel="stylesheet" href="codemirror-5.65.12/theme/tomorrow-night-bright.css">
+    <link rel="stylesheet" href="EditorStyling.css">
+</head>
+<body class="body">
+    
+    <textarea id="editor" class="textarea">
+    </textarea>
+    <script>
+        // var ws = new WebSocket("ws://localhost:8001/");
+        // ws.onopen = function() {
+                  
+        //           // Web Socket is connected, send data using send()
+        //           ws.send("Message to send");
+        //           alert("Message is sent...");
+        //        };
+        // ws.onmessage = function (evt) {
+        //     var received_msg = evt.data;
+        //     console.log(received_msg);
+        // }
+
+        var lc_curr = 0;
+        var prevchar = 0;
+        var prevScroll = 0;
+        var editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
+            value: "Welcome to the KIWIGR text editor!",
+            // mode: "xml",
+            theme: "tomorrow-night-bright",
+            lineNumbers: true,
+            autoCloseTags: true,
+            cursorHeight: 1.2   
+
+        });
+
+
+        editor.on("cursorActivity", () => {
+            editor.focus();
+            //console.log(editor.getCursor())
+            currChar = editor.getCursor().ch;
+            editor.focus();
+            //editor.setCursor({line:0, ch:6});
+            console.log(editor.getCursor())
+            lnchngLine = editor.getCursor().line;
+            lnchng = editor.heightAtLine(lnchngLine);
+            //console.log("CURRENT CURSOR (LINE,POS): ", lnchngLine, lnchng);
+        });
+
+        editor.on("scroll", () => {
+            console.log(editor.getScrollInfo().top);
+            currScroll = editor.getScrollInfo().top;
+            moveOnScroll(currScroll, prevScroll);
+            prevScroll = currScroll;
+        });
+    
+        editor.on("changes", () => {
+            lc = editor.lineCount();
+            ln = editor.getCursor().line;
+            lchar = editor.getCursor().ch;
+            ht_at_ln = editor.heightAtLine(ln);
+            lnht = editor.defaultTextHeight();
+            editor.focus();
+            //editor.setCursor({line:1, ch:0});
+            //console.log(editor.getCursor());
+
+
+            console.log("LINE CNT: ", lc);
+            console.log("CHARS: ", lchar);
+            //console.log("HANDLE: ", editor.getLineHandle(ln));
+            console.log("HEIGHT PX: ", ht_at_ln);
+            // if (lc >= lc_curr) {
+            //     //function generate(event, pos, sz, chars)
+            //     generate(event, Number(ht_at_ln), Number(lnht), Number(prevchar));
+            // } else if (lc < lc_curr) {
+            //     //function rmv_svg(pos, sz, chamt, next)
+            //     var changeAmount = lc_curr - lc
+            //     console.log("DELETED LINE: ", Number(lnchng));
+            //     rmv_svg(Number(ht_at_ln), Number(lnht), Number(changeAmount), Number(lnchng));
+            // } 
+            // if (lc==1 && prevchar == 1) {
+            //     clearDoc();
+            // }
+            lc_curr = lc;
+            prevchar = lchar
+        });
+        function swipeLeftOnF() {
+            editor.focus();
+            var currentPosition = editor.getCursor();
+            if (currentPosition.ch > 0) {
+                editor.setCursor({line: 0, ch: currentPosition.ch-1});
+            }
+        }
+
+        function swipeRightOnF() {
+            editor.focus();
+            var currentPosition = editor.getCursor();
+            if (currentPosition.ch > 0) {
+                editor.setCursor({line: 0, ch: currentPosition.ch-1});
+            }
+        }
+        function modifyCursor(){
+            console.log("in here");
+            editor.focus();
+            // editor.setCursor({line: 0, ch: 3});
+            // console.log(editor.getCursor());
+            // editor.setCursor({line: 0, ch: 2});
+            // console.log(editor.getCursor());
+            // console.log(editor.getDoc());
+            var doc = editor.getDoc();
+            var cursor = doc.getCursor();
+            doc.replaceRange("ss", cursor);
+        }
+        function createIntroText(){
+            console.log("in here");
+            editor.focus();
+            // editor.setCursor({line: 0, ch: 3});
+            // console.log(editor.getCursor());
+            // editor.setCursor({line: 0, ch: 2});
+            // console.log(editor.getCursor());
+            // console.log(editor.getDoc());
+            var doc = editor.getDoc();
+            var cursor = doc.getCursor();
+            doc.replaceRange("Welcome to the KIWIGR text editor!", cursor);
+        }
+        function receiveGestures(websocket) {
+            console.log("in receive gestures");
+            websocket.addEventListener("message", ({ data }) => {
+                console.log("message received");
+                console.log(data);
+                const gesture = JSON.parse(data).gesture;
+                if(gesture === 1) {
+                    swipeLeftOnF();
+                }
+            
+            });
+        }
+        window.addEventListener("DOMContentLoaded", () => {
+
+            // Open the WebSocket connection and register event handlers.
+            let websocket = new WebSocket("ws://localhost:8001/");
+       
+            receiveGestures(websocket)
+        });
+        createIntroText();
+
+    </script>
+</body>
+</html>

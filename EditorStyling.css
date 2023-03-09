@@ -1,0 +1,21 @@
+html, body {
+    height:100%;  
+    width:100%;
+  }
+  
+  body {
+    margin: 0px;
+  }
+  
+  .CodeMirror {
+    border: 1px solid #eee;
+    height: 100%;
+    width:100%;
+    font-size: 16px;
+  }
+  
+  #editor {
+      height: 100%;
+      position: absolute;
+      width:100%;
+    }
