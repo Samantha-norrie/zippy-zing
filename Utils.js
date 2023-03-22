@@ -11,6 +11,7 @@ The following gestures can be used to navigate around the text seen here:\n\
 To move the cursor between characters, swipe UP, DOWN, RIGHT, or LEFT on the F-KEY.\n\
 To move the cursor between sentences, swipe UP, DOWN, RIGHT, or LEFT on the F-KEY and D-KEY.\n\
 To move the cursor between paragraphs, swipe UP, DOWN, RIGHT, or LEFT on the F-KEY, D-KEY, and S-KEY.\n\
+To move the cursor between sections, swipe UP, DOWN, RIGHT, or LEFT on the F-KEY, D-KEY, S-KEY, and A-KEY.\n\
 \n\
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam ut metus lacus. Proin at dolor eu nisi\n\
 sagittis ultrices. Quisque suscipit velit quis fermentum mollis. Vivamus vel tincidunt nisi, in fermentum\n\
@@ -23,10 +24,26 @@ Vestibulum ornare erat turpis, eget gravida dui pharetra at. Sed tristique portt
 maximus non. Donec molestie nisl ut neque consectetur, vitae condimentum dolor laoreet. Mauris lacinia nibh\n\
 eget arcu aliquam suscipit. Integer consectetur tellus in massa ornare ornare. Aenean pharetra luctus nibh.\n\
 Maecenas vel massa ut libero gravida auctor ut sit amet purus. Suspendisse maximus mi convallis orci vulputate,\n\
-a feugiat est rutrum.";
+a feugiat est rutrum.\n\
+\0";
 
+function getPositionInDocString(cursorPosition, lineNumber) {
+    editor.focus();
+    var doc = editor.getValue();
+    var positionInDocString = 0;
+    var currentLineNumber = 0;
+    while(currentLineNumber <= lineNumber) {
+        if(currentLineNumber === lineNumber) {
+            return positionInDocString + cursorPosition;
+        }
+        positionInDocString = positionInDocString+1;
+        if(doc.charAt(positionInDocString) === '\n') {
+            currentLineNumber = currentLineNumber+1;
+        }
+    }
+}
 //TODO scrappy. fix if time permits
-var line_counter = 1;
+// var line_counter = editor.lineCount();
 
 function swipeOnF(direction) {
     editor.focus();
@@ -40,7 +57,7 @@ function swipeOnF(direction) {
             editor.setCursor({line: currentPosition.line-1, ch: currentPosition.ch});
         }
     } else {
-        if(currentPosition.line < line_counter) {
+        if(currentPosition.line < editor.lineCount()) {
             editor.setCursor({line: currentPosition.line+1, ch: currentPosition.ch});
         }
     }
@@ -53,7 +70,7 @@ function swipeOnFD(direction) {
     if (direction === D.RIGHT) {
         console.log("right");
         for (let i = cursorPosition; i < doc.length; i++) {
-            if (doc.charAt(i-1) === '\n') {
+            if (doc.charAt(i) === '\n') {
                 console.log("NEWLINE");
             }
             if (doc.charAt(i) === '!' || doc.charAt(i) === '.' || doc.charAt(i) === '?') {
@@ -106,6 +123,80 @@ function swipeOnFD(direction) {
     console.log(doc);
 }
 
+function swipeOnFDS(direction) {
+    editor.focus();
+    var doc = editor.getValue();
+    var cursorPosition = editor.getCursor().ch;
+
+    // const cursor = cm.getCursor();
+    console.log(getPositionInDocString(cursorPosition, editor.getCursor().line));
+    console.log(doc.length);
+    var positionInDoc = getPositionInDocString(cursorPosition, editor.getCursor().line);
+    var prev_newline = false
+    if(positionInDoc != 0 && doc.charAt(positionInDoc-1) === '\n') {
+        prev_newline = true;
+    }
+    var curr_line = editor.getCursor().line;
+    if(direction === D.DOWN || direction === D.RIGHT) {
+        for(let i = positionInDoc; i < doc.length; i++) {
+            if(prev_newline && doc.charAt(i) === '\n') {
+                editor.setCursor({line: curr_line, ch: 0});
+                return;
+            }
+            if(doc.charAt(i) === '\n') {
+                console.log("line updated", curr_line);
+                curr_line = curr_line+1;
+                prev_newline = true;
+            } else {
+                prev_newline = false;
+            }
+        }
+        editor.setCursor({line: editor.lineCount()-1, ch: 0});
+    } else if(direction === D.UP || direction === D.LEFT) {
+        for(let i = positionInDoc; i > 0; i--) {
+            if(prev_newline && doc.charAt(i) === '\n') {
+                editor.setCursor({line: curr_line, ch: 0});
+                return;
+            }
+            if(doc.charAt(i) === '\n') {
+                console.log("line updated", curr_line);
+                curr_line = curr_line-1;
+                prev_newline = true;
+            } else {
+                prev_newline = false;
+            }
+        }
+        editor.setCursor({line: 0, ch: 0});
+    }
+    // STATUS_CURRENT_LINE.textContent = cursor.line + 1;
+    // if (direction === D.RIGHT) {
+    //     for(let i = cursorPosition; )
+    // }
+}
+function swipeOnFDSA(direction) {
+    editor.focus();
+    var doc = editor.getValue();
+    var cursorPosition = editor.getCursor().ch;
+    var currLine = editor.getCursor().line;
+    // const cursor = cm.getCursor();
+    console.log(getPositionInDocString(cursorPosition, currLine));
+    console.log(doc.length);
+    var positionInDoc = getPositionInDocString(cursorPosition, editor.getCursor().line);
+    
+    if (direction === D.UP || direction === D.LEFT) {
+        editor.setCursor({line: 0, ch: 0});
+    } else {
+        // for(let i = 0; i < positionInDoc; i++) {
+        //     if(doc.charAt(i) === '\n') {
+        //         console.log("line updated", currLine);
+        //         currLine = currLine+1;
+        //     } else if (doc.charAt(i) === '\0') {
+        //         editor.setCursor({line: currLine, ch: 0});
+        //     }
+        // }
+        editor.setCursor({line: editor.lineCount()-1, ch: 0});
+    }
+}
 function addCharacterAtCursor(character) {
     return null;
     // editor.focus();
@@ -183,11 +274,23 @@ function performGesture(gestureNum) {
         case 45:
             swipeOnFD(D.DOWN);
             break;
+        case 46:
+            swipeOnFDS(D.DOWN);
+            break;
+        case 47:
+            swipeOnFDSA(D.DOWN);
+            break;
         case 48:
             swipeOnF(D.LEFT);
             break;
         case 49:
             swipeOnFD(D.LEFT);
+            break;
+        case 50:
+            swipeOnFDS(D.LEFT);
+            break;
+        case 51:
+            swipeOnFDSA(D.LEFT);
             break;
         case 52:
             swipeOnF(D.RIGHT);
@@ -195,11 +298,23 @@ function performGesture(gestureNum) {
         case 53:
             swipeOnFD(D.RIGHT);
             break;
+        case 54:
+            swipeOnFDS(D.RIGHT);
+            break;
+        case 55:
+            swipeOnFDSA(D.RIGHT);
+            break;
         case 56: 
             swipeOnF(D.UP);
             break;
         case 57:
             swipeOnFD(D.UP);
+            break;
+        case 58:
+            swipeOnFDS(D.UP);
+            break;
+        case 59:
+            swipeOnFDSA(D.UP);
             break;
     }
 }
